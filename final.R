@@ -9,8 +9,11 @@ library(jsonlite)
 library(lubridate)
 library(ggmap)
 library(sf)
+library(scales)
 
-ggmap::register_google(key = token['googleAPIkey'])
+#brMap <- readRDS(here::here('assignment5/mapTerrainBR.RDS')) 
+br_tract_map <- st_read(here::here('br_tract/tl_2018_22_tract.shp'))
+br_tract_map <- filter(br_tract_map, COUNTYFP=='033')
 
 apiEndpoint <- 'https://data.brla.gov/resource/uqxt-dtpe.csv?'
 
@@ -38,13 +41,13 @@ tract_data <- fromJSON("https://api.datausa.io/api/?sort=desc&show=geo&required=
 # format data
 tract_data[,2] <- substr(tract_data[,2],8,100)
 tract_data <- as_tibble(tract_data)
-
 colnames(tract_data)[(1:3)] <- c("year", "GEOID", "median_income")
 
 
-#brMap <- readRDS(here::here('assignment5/mapTerrainBR.RDS')) 
-br_tract_map <- st_read(here::here('br_tract/tl_2018_22_tract.shp'))
-br_tract_map <- filter(br_tract_map, COUNTYFP=='033')
+# overwriting shape file with tract income data
+br_tract_income_map <- br_tract_map %>% inner_join(tract_data, by="GEOID")
+br_tract_income_map$median_income <- as.numeric(br_tract_income_map$median_income)
+
 #brMap <- get_map(location = 'baton rouge', zoom = 10)
 
 
@@ -74,7 +77,8 @@ roads_avg_response = inner_join(road_issues, median_fix_time, by = "streetname")
 # sort_desc <- roads_avg_response[order(roads_avg_response$long),]
 
 ggplot() +
-  geom_sf(data = br_tract_map)
+  geom_sf(data = br_tract_income_map, aes(fill=median_income)) +
+  scale_fill_gradient(labels=dollar_format(), name="Median Income")
 
 
 # shows descending of completion time
