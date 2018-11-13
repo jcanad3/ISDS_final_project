@@ -6,6 +6,7 @@ library(tidyverse)
 source(here('final_project/R/tokensocrata.R'))
 library(lubridate)
 library(ggmap)
+library(sf)
 
 ggmap::register_google(key = token['googleAPIkey'])
 
@@ -30,11 +31,11 @@ road_issues <- filter(dt_311, typename == 'POTHOLE' | typename == 'CONCRETE ROAD
                       typename == 'GUARDRAIL ISSUES' | typename == 'STORMDRAIN ISSUES') %>%
                       mutate(time_to_complete = closeddate - createdate)
 
-#brMap <- readRDS(here::here('assignment5/mapTerrainBR.RDS')) 
-
-br_tract_map <-readRDS(here::here('br_tract'))
-
+brMap <- readRDS(here::here('assignment5/mapTerrainBR.RDS')) 
+br_tract_map <- st_read(here::here('final_project/R/br_tract/tl_2018_22_tract.shp'))
 #brMap <- get_map(location = 'baton rouge', zoom = 10)
+
+revgeocode(c(road_issues$long, road_issues$lat))
 
 # returns values in seconds
 median_fix_time <- road_issues %>% group_by(streetname) %>% 
@@ -60,7 +61,11 @@ ggmap(brMap, extent = "device") +
   scale_alpha(range = c(0, 0.3), guide = FALSE)
 
 sort_desc <- roads_avg_response[order(roads_avg_response$long),]
-ggmap(br_tract_map) + 
+
+ggplot() +
+  geom_sf(data = filter(br_tract_map, COUNTYFP=='033' | COUNTYFP == '121'))
+
+ggmap(brMap) + 
    # geom_point(data=roads_avg_response, aes(x=long, y=lat), color='blue', alpha=0.1, size = roads_avg_response$median_time_for_street*0.0000001)
   geom_path(data=sort_desc, aes(x=long, y=lat, color = seconds(median_time_for_street)))
 
