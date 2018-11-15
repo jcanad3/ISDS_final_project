@@ -50,10 +50,14 @@ br_tract_income_map$median_income <- as.numeric(br_tract_income_map$median_incom
 
 #brMap <- get_map(location = 'baton rouge', zoom = 10)
 
+# add geoid where point falls within geometry
+road_geom <- st_as_sf(road_issues, coords=c("long", "lat"))
+st_crs(road_geom) <- 4269
+inside <- st_intersects(br_tract_income_map, road_geom)
 
 # returns values in seconds
 median_fix_time <- road_issues %>% group_by(streetname) %>% 
-  summarise(median_time_for_street = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
+  summarise(median_time_for_tract = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
 # removing values where time_to_complete = 0
 #mean_fix_time <- mean_fix_time[mean_fix_time$time_to_complete > 0,]
@@ -76,9 +80,12 @@ roads_avg_response = inner_join(road_issues, median_fix_time, by = "streetname")
 
 # sort_desc <- roads_avg_response[order(roads_avg_response$long),]
 
+# median income plot
 ggplot() +
   geom_sf(data = br_tract_income_map, aes(fill=median_income)) +
   scale_fill_gradient(labels=dollar_format(), name="Median Income")
+
+# mean fix time
 
 
 # shows descending of completion time
