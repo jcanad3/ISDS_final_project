@@ -36,6 +36,11 @@ road_issues <- filter(dt_311, typename == 'POTHOLE' | typename == 'CONCRETE ROAD
                       typename == 'GUARDRAIL ISSUES' | typename == 'STORMDRAIN ISSUES') %>%
                       mutate(time_to_complete = closeddate - createdate)
 
+# adding index to road_issues
+
+road_issues <- road_issues %>% mutate(index=row_number(), GEOID = NA)
+
+backup_road <- road_issues
 
 tract_data <- fromJSON("https://api.datausa.io/api/?sort=desc&show=geo&required=income&sumlevel=tract&year=2016&where=geo%3A16000US2205000")$data
 # format data
@@ -50,10 +55,20 @@ br_tract_income_map$median_income <- as.numeric(br_tract_income_map$median_incom
 
 #brMap <- get_map(location = 'baton rouge', zoom = 10)
 
-# add geoid where point falls within geometry
+# find which point fall within each geometry
 road_geom <- st_as_sf(road_issues, coords=c("long", "lat"))
 st_crs(road_geom) <- 4269
 inside <- st_intersects(br_tract_income_map, road_geom)
+
+count = 1
+for (tract in inside) {
+    geo_id <- br_tract_income_map[count,]$GEOID
+    print(geo_id)
+    print(road_issues %>% filter(index %in% tract) %>% mutate(GEOID = geo_id))
+    road_issues$GEOID[road_issues$index == tract] <- geo_id
+    #road_issues[tract,] <- mutate(GEOID = geo_id)
+    count <- count + 1
+}
 
 # returns values in seconds
 median_fix_time <- road_issues %>% group_by(streetname) %>% 
@@ -67,18 +82,6 @@ median_fix_time <- road_issues %>% group_by(streetname) %>%
 
 roads_avg_response = inner_join(road_issues, median_fix_time, by = "streetname")
 
-# ggmap(brMap, extent = "device") + 
-#  # geom_density_2d(data = roads_avg_response, aes(x = long, y = lat), size = 0.5) + 
-#   stat_density_2d(data = roads_avg_response, 
-#                  aes(x = long, y = lat, fill = ..level.., alpha = 0.3), size = 0.1, 
-#                   geom = "polygon") + 
-#   scale_fill_gradient(low = "green", high = "red") + 
-#   #geom_polygon(data = roads_avg_response, aes(x=long, y=lat, fill=median_time_for_street))
-#   #geom_point(data=roads_avg_response, aes(x=long, y=lat), color='blue', 
-#   #           alpha=0.1, size = roads_avg_response$median_time_for_street*0.00000008) +
-#   scale_alpha(range = c(0, 0.3), guide = FALSE)
-
-# sort_desc <- roads_avg_response[order(roads_avg_response$long),]
 
 # median income plot
 ggplot() +
