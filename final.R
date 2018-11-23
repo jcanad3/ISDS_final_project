@@ -40,7 +40,6 @@ road_issues <- filter(dt_311, typename == 'POTHOLE' | typename == 'CONCRETE ROAD
 
 road_issues <- road_issues %>% mutate(index=row_number(), GEOID = NA)
 
-backup_road <- road_issues
 
 tract_data <- fromJSON("https://api.datausa.io/api/?sort=desc&show=geo&required=income&sumlevel=tract&year=2016&where=geo%3A16000US2205000")$data
 # format data
@@ -72,10 +71,12 @@ mean_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
 
 br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="GEOID")
 
-# Mean tract fix time
+br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income_map$mean_tract_fix_time))
+
+# Mean tract fix time by day
 ggplot() +
   geom_sf(data=br_tract_income_map, aes(fill=as.numeric(mean_tract_fix_time))) +
-  scale_fill_continuous(name="Mean Tract Fix Time")
+  scale_fill_continuous(name="Mean Tract Fix Time")+
 
 
 # median income plot
