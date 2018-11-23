@@ -76,10 +76,11 @@ br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income
 # Mean tract fix time by day
 ggplot() +
   geom_sf(data=br_tract_income_map, aes(fill=as.numeric(mean_tract_fix_time))) +
-  scale_fill_continuous(name="Mean Tract Fix Time")+
+  scale_fill_continuous(name="Mean Tract Fix Time", low="#132b43", high="#aad8fb")
 
 
 # median income plot
 ggplot() +
   geom_sf(data = br_tract_income_map, aes(fill=median_income)) +
   scale_fill_gradient(labels=dollar_format(), name="Median Income")
+
