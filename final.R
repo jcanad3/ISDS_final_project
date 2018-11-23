@@ -63,34 +63,22 @@ inside <- st_intersects(br_tract_income_map, road_geom)
 count = 1
 for (tract in inside) {
     geo_id <- br_tract_income_map[count,]$GEOID
-    print(geo_id)
-    print(road_issues %>% filter(index %in% tract) %>% mutate(GEOID = geo_id))
-    road_issues$GEOID[road_issues$index == tract] <- geo_id
-    #road_issues[tract,] <- mutate(GEOID = geo_id)
+    road_issues$GEOID[road_issues$index %in% tract] <- geo_id
     count <- count + 1
 }
 
-# returns values in seconds
-median_fix_time <- road_issues %>% group_by(streetname) %>% 
-  summarise(median_time_for_tract = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
+mean_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
+  summarise(mean_tract_fix_time = mean(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
-# removing values where time_to_complete = 0
-#mean_fix_time <- mean_fix_time[mean_fix_time$time_to_complete > 0,]
+br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="GEOID")
 
-# convert to date time
-#median_fix_time$time_to_complete <- seconds_to_period(median_fix_time$time_to_complete)
-
-roads_avg_response = inner_join(road_issues, median_fix_time, by = "streetname")
+# Mean tract fix time
+ggplot() +
+  geom_sf(data=br_tract_income_map, aes(fill=as.numeric(mean_tract_fix_time))) +
+  scale_fill_continuous(name="Mean Tract Fix Time")
 
 
 # median income plot
 ggplot() +
   geom_sf(data = br_tract_income_map, aes(fill=median_income)) +
   scale_fill_gradient(labels=dollar_format(), name="Median Income")
-
-# mean fix time
-
-
-# shows descending of completion time
-#sort_desc <- mean_fix_time[order(mean_fix_time$time_to_complete),]
-
