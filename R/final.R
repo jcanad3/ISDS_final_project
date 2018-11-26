@@ -3,7 +3,7 @@
 library(RSocrata)
 library(here)
 library(tidyverse)
-source(here('tokensocrata.R'))
+source(here('R/tokensocrata.R'))
 library(httr)
 library(jsonlite)
 library(lubridate)
@@ -11,8 +11,8 @@ library(ggmap)
 library(sf)
 library(scales)
 
-#brMap <- readRDS(here::here('assignment5/mapTerrainBR.RDS')) 
-br_tract_map <- st_read(here::here('br_tract/tl_2018_22_tract.shp'))
+
+br_tract_map <- st_read(here::here('R/br_tract/tl_2018_22_tract.shp'))
 br_tract_map <- filter(br_tract_map, COUNTYFP=='033')
 
 apiEndpoint <- 'https://data.brla.gov/resource/uqxt-dtpe.csv?'
@@ -76,13 +76,14 @@ br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income
 #median income vs mean tract fix time correlation
 cor_coeff_mean_tract <- cor(br_tract_income_map$mean_tract_fix_time,br_tract_income_map$median_income, use="pairwise.complete.obs")
 
-# mean income plot
+# median income plot
 ggplot() +
   geom_sf(data = br_tract_income_map, aes(fill=median_income)) +
   scale_fill_gradient(labels=dollar_format(), name="Median Income", low="green",high="red") +
   theme(axis.ticks=element_blank(), 
         axis.text=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank()) +
+  ggtitle("Median Income for Baton Rouge")
 
 # scatter plot for br_tract_income_map where x = mean_tract_fix_time and y=median income.
 ggplot()+
@@ -90,7 +91,8 @@ ggplot()+
             y=median_income, colour = mean_tract_fix_time)) +
   labs(x = "Days to Fix Road Issues", y = "Median Income") + 
   labs(colour = "Fix Time") +
-  scale_color_gradient2(mid="green",high="red", space ="Lab") 
+  scale_color_gradient2(mid="green",high="red", space ="Lab") +
+  ggtitle("Mean Tract Fix Time vs Median Income")
 
 # Mean tract fix time by day
 ggplot() +
@@ -98,7 +100,8 @@ ggplot() +
   scale_fill_continuous(name="Mean Tract Fix Time in Days", low="green", high="red") +
   theme(axis.ticks=element_blank(), 
         axis.text=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank()) +
+  ggtitle("Mean Tract Fix Time for Baton Rouge")
 
 # Median tract
 median_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
@@ -117,12 +120,14 @@ ggplot()+
                                            y=median_income, colour = median_tract_fix_time)) +
   labs(x = "Days to Fix Road Issues", y = "Median Income") + 
   labs(colour = "Fix Time") +
-  scale_color_gradient2(mid="green",high="red", space ="Lab") 
+  scale_color_gradient2(mid="green",high="red", space ="Lab") +
+  ggtitle("Median Tract Fix Time vs Median Income")
 
-# Mean tract fix time by day
+# Median tract fix time by day
 ggplot() +
   geom_sf(data=br_tract_income_map, aes(fill=as.numeric(median_tract_fix_time))) +
-  scale_fill_continuous(name="Mean Tract Fix Time in Days", low="green", high="red") +
+  scale_fill_continuous(name="Median Tract Fix Time in Days", low="green", high="red") +
   theme(axis.ticks=element_blank(), 
         axis.text=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank()) +
+  ggtitle("Median Tract Fix Time")
