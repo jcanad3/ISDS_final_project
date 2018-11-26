@@ -74,9 +74,9 @@ br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="
 br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income_map$mean_tract_fix_time))
 
 #median income vs mean tract fix time correlation
-cor_coeff <- cor(br_tract_income_map$mean_tract_fix_time,br_tract_income_map$median_income, use="pairwise.complete.obs")
+cor_coeff_mean_tract <- cor(br_tract_income_map$mean_tract_fix_time,br_tract_income_map$median_income, use="pairwise.complete.obs")
 
-# median income plot
+# mean income plot
 ggplot() +
   geom_sf(data = br_tract_income_map, aes(fill=median_income)) +
   scale_fill_gradient(labels=dollar_format(), name="Median Income", low="green",high="red") +
@@ -95,6 +95,33 @@ ggplot()+
 # Mean tract fix time by day
 ggplot() +
   geom_sf(data=br_tract_income_map, aes(fill=as.numeric(mean_tract_fix_time))) +
+  scale_fill_continuous(name="Mean Tract Fix Time in Days", low="green", high="red") +
+  theme(axis.ticks=element_blank(), 
+        axis.text=element_blank(),
+        panel.background=element_blank())
+
+# Median tract
+median_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
+  summarise(median_tract_fix_time = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
+
+br_tract_income_map <- inner_join(br_tract_income_map, median_tract_fix_time, by="GEOID")
+
+br_tract_income_map$median_tract_fix_time <- day(seconds_to_period(br_tract_income_map$median_tract_fix_time))
+
+#median income vs median tract fix time correlation
+cor_coeff_median_tract <- cor(br_tract_income_map$median_tract_fix_time,br_tract_income_map$median_income, use="pairwise.complete.obs")
+
+# scatter plot for median income and median tract fix time
+ggplot()+
+  geom_point(data=br_tract_income_map, aes(x = median_tract_fix_time, 
+                                           y=median_income, colour = median_tract_fix_time)) +
+  labs(x = "Days to Fix Road Issues", y = "Median Income") + 
+  labs(colour = "Fix Time") +
+  scale_color_gradient2(mid="green",high="red", space ="Lab") 
+
+# Mean tract fix time by day
+ggplot() +
+  geom_sf(data=br_tract_income_map, aes(fill=as.numeric(median_tract_fix_time))) +
   scale_fill_continuous(name="Mean Tract Fix Time in Days", low="green", high="red") +
   theme(axis.ticks=element_blank(), 
         axis.text=element_blank(),
