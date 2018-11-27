@@ -2,7 +2,6 @@
 title: Final Project
 author: Jude Canady, Cameron Navero
 output: github_document
-
 ---
 
 ```{r setup, include=FALSE}
@@ -22,7 +21,7 @@ library(knitr)
 
 
 ```{r, echo=FALSE, results='hide'}
-br_tract_map <- st_read(here::here('R/br_tract/tl_2018_22_tract.shp'))
+br_tract_map <- st_read(here::here('data/br_tract/tl_2018_22_tract.shp'))
 br_tract_map <- filter(br_tract_map, COUNTYFP=='033')
 ```
 
