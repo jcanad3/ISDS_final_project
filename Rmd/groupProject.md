@@ -13,7 +13,7 @@ dt_311 <- as_tibble(dt_311)
 dt_311 <- dt_311 %>% 
   mutate(geolocation = str_extract_all(geolocation, '[-,.,0-9]+')) %>% 
   mutate(long = map_chr(geolocation, 1), lat = map_chr(geolocation, 2)) %>% 
-  mutate_at(vars(long, lat), as.double) # same as mutate(long = as.double(long), lat = as.double(lat))
+  mutate_at(vars(long, lat), as.double) 
 ```
 
 Research Question
