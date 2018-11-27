@@ -17,7 +17,7 @@ library(lubridate)
 library(ggmap)
 library(sf)
 library(scales)
-
+library(knitr)
 ```
 
 
@@ -128,9 +128,11 @@ fix time reported in days.
 mean_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
   summarise(mean_tract_fix_time = mean(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
-br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="GEOID")
+mean_tract_fix_time$mean_tract_fix_time <- day(seconds_to_period(mean_tract_fix_time$mean_tract_fix_time))
 
-br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income_map$mean_tract_fix_time))
+kable(mean_tract_fix_time %>% top_n(10))
+
+br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="GEOID")
 ```
 
 
@@ -185,9 +187,11 @@ with the median fix time reported in days.
 median_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
   summarise(median_tract_fix_time = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
-br_tract_income_map <- inner_join(br_tract_income_map, median_tract_fix_time, by="GEOID")
+median_tract_fix_time$median_tract_fix_time <- day(seconds_to_period(median_tract_fix_time$median_tract_fix_time))
 
-br_tract_income_map$median_tract_fix_time <- day(seconds_to_period(br_tract_income_map$median_tract_fix_time))
+kable(median_tract_fix_time %>% top_n(10))
+
+br_tract_income_map <- inner_join(br_tract_income_map, median_tract_fix_time, by="GEOID")
 
 ```
 

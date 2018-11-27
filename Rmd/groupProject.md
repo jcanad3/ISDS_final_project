@@ -19,7 +19,7 @@ dt_311 <- dt_311 %>%
 Research Question
 =================
 
-Does the median income of an area affect the fix of road related issues in Baton Rouge?
+Does the median income of an area affect the fix time of road related issues in Baton Rouge?
 
 Data Sources
 ============
@@ -88,9 +88,26 @@ A mean tract fix time for each tract is created by grouping the 311 reports on t
 mean_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
   summarise(mean_tract_fix_time = mean(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
-br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="GEOID")
+mean_tract_fix_time$mean_tract_fix_time <- day(seconds_to_period(mean_tract_fix_time$mean_tract_fix_time))
 
-br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income_map$mean_tract_fix_time))
+kable(mean_tract_fix_time %>% top_n(10))
+```
+
+| GEOID       |  mean\_tract\_fix\_time|  num\_reports|
+|:------------|-----------------------:|-------------:|
+| 22033000200 |                     126|           343|
+| 22033001700 |                     161|           315|
+| 22033003400 |                     102|           363|
+| 22033003506 |                     138|           315|
+| 22033003701 |                     125|           361|
+| 22033003703 |                     120|           330|
+| 22033003801 |                     125|           368|
+| 22033003906 |                     154|           422|
+| 22033004005 |                     152|           317|
+| 22033004503 |                     116|           408|
+
+``` r
+br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="GEOID")
 ```
 
 <!-- median income vs mean tract fix time correlation -->
@@ -144,9 +161,26 @@ Similar to the process above, the median fix time is calculated for each tract w
 median_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
   summarise(median_tract_fix_time = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
-br_tract_income_map <- inner_join(br_tract_income_map, median_tract_fix_time, by="GEOID")
+median_tract_fix_time$median_tract_fix_time <- day(seconds_to_period(median_tract_fix_time$median_tract_fix_time))
 
-br_tract_income_map$median_tract_fix_time <- day(seconds_to_period(br_tract_income_map$median_tract_fix_time))
+kable(median_tract_fix_time %>% top_n(10))
+```
+
+| GEOID       |  median\_tract\_fix\_time|  num\_reports|
+|:------------|-------------------------:|-------------:|
+| 22033000200 |                        63|           343|
+| 22033001700 |                        50|           315|
+| 22033003400 |                        30|           363|
+| 22033003506 |                        72|           315|
+| 22033003701 |                        57|           361|
+| 22033003703 |                        44|           330|
+| 22033003801 |                        57|           368|
+| 22033003906 |                        77|           422|
+| 22033004005 |                        67|           317|
+| 22033004503 |                        40|           408|
+
+``` r
+br_tract_income_map <- inner_join(br_tract_income_map, median_tract_fix_time, by="GEOID")
 ```
 
 ``` r
