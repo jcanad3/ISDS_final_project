@@ -3,7 +3,7 @@ Final Project
 
 Jude Canady, Cameron Navero
 
-Does the median income of an area affect the fix of road related issues in Baton Rouge?
+Does the median income of an area affect the fix time of road related issues in Baton Rouge?
 
 Using the 311 data set, we filtered the collection of all 311 calls concerning road issues.
 These were further sorted into their respective census tracts as designated by the US Census
