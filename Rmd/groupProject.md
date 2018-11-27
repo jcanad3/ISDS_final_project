@@ -138,7 +138,7 @@ ggplot()+
   labs(x = "Days to Fix Road Issues", y = "Median Income") + 
   labs(colour = "Fix Time") +
   scale_color_gradient2(mid="green",high="red", space ="Lab") +
-  ggtitle("Mean Tract Fix Time vs Median Income")
+  ggtitle("Median Income vs Mean Tract Fix Time")
 ```
 
 ![](groupProject_files/figure-markdown_github/unnamed-chunk-10-1.png)
@@ -197,7 +197,7 @@ ggplot()+
   labs(x = "Days to Fix Road Issues", y = "Median Income") + 
   labs(colour = "Fix Time") +
   scale_color_gradient2(mid="green",high="red", space ="Lab") +
-  ggtitle("Median Tract Fix Time vs Median Income")
+  ggtitle("Median Income vs Median Tract Fix Time")
 ```
 
 ![](groupProject_files/figure-markdown_github/unnamed-chunk-14-1.png)
