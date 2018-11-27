@@ -1,8 +1,12 @@
-# Jude Canady
-# Final project
+---
+title: Final Project
+author: Jude Canady, Cameron Navero
+output: html_document
+
+---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE,message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,message = FALSE)
 library(RSocrata)
 library(here)
 library(tidyverse)
@@ -16,17 +20,17 @@ library(scales)
 
 ```
 
-```{r}
+
+```{r, echo=FALSE, results='hide'}
 br_tract_map <- st_read(here::here('R/br_tract/tl_2018_22_tract.shp'))
 br_tract_map <- filter(br_tract_map, COUNTYFP=='033')
+```
 
+```{r}
 apiEndpoint <- 'https://data.brla.gov/resource/uqxt-dtpe.csv?'
 
 query <- "$where=createdate between '2015-12-31' and '2018-10-26'"
 
-```
-
-```{r}
 dt_311 <- read.socrata(paste0(apiEndpoint, query), app_token = token[['app']])
 dt_311 <- as_tibble(dt_311)
 
@@ -35,6 +39,29 @@ dt_311 <- dt_311 %>%
   mutate(long = map_chr(geolocation, 1), lat = map_chr(geolocation, 2)) %>% 
   mutate_at(vars(long, lat), as.double) # same as mutate(long = as.double(long), lat = as.double(lat))
 
+```
+
+# Research Question
+Does the median income of an area affect the fix of road related issues in Baton Rouge?
+
+# Data Sources
+The final data table comes from three sources: the United States Census Bureau, Data USA, and OpenBR. 
+
+The original column names of the US Census shape file are `r colnames(br_tract_map)`. 
+
+The original columns of the OpenBR 311 data set are `r colnames(dt_311)`
+
+# Data Cleaning
+The table was constructed by joining on the GEOID for Baton Rouge and was mutated to allow for the complaint fix time, which was
+calculated by subtracting the opening data from the closing date for each 311 report. From this point, the 311 dataset was 
+filtered for the following issues, POTHOLE, CONCRETE ROAD REPAIRS NEEDED, ROADSIDE EROSION ISSUE, REPAIR A BROKEN STREET CURB,
+SHOULDER REPAIR NEEDED, ROAD STRIPING NEEDED, CAVE-IN/SINK HOLE (SEWER RELATED), ROADSIDE DRAINAGE ISSUE, 
+ROAD BUCKLE/BLOWOUT/FAULT, MANHOLE ISSUE, GUARDRAIL ISSUES, STORMDRAIN ISSUES. An index and blank GEOID column were added 
+to the table to reduce the difficulty of future joins. 
+
+
+
+```{r}
 road_issues <- filter(dt_311, typename == 'POTHOLE' | typename == 'CONCRETE ROAD REPAIRS NEEDED' |
                         typename == 'ROADSIDE EROSION ISSUE' | typename == 'REPAIR A BROKEN STREET CURB' |
                         typename == 'SHOULDER REPAIR NEEDED' | typename == 'ROAD STRIPING NEEDED' |
@@ -43,24 +70,25 @@ road_issues <- filter(dt_311, typename == 'POTHOLE' | typename == 'CONCRETE ROAD
                         typename == 'GUARDRAIL ISSUES' | typename == 'STORMDRAIN ISSUES') %>%
   mutate(time_to_complete = closeddate - createdate)
 
-```
-
-<!-- adding index to road_issues -->
-```{r}
 road_issues <- road_issues %>% mutate(index=row_number(), GEOID = NA)
-
-
-tract_data <- fromJSON("https://api.datausa.io/api/?sort=desc&show=geo&required=income&sumlevel=tract&year=2016&where=geo%3A16000US2205000")$data
-
 ```
+
+
+The tract data returned from Data USA is in JSON format. We extract the GEOID and median income for 2016 from all available
+tracts in Baton Rouge. This table is converted to a tibble, with column names year, GEOID, and median_income. 
+
 
 <!-- format data -->
 ```{r}
+tract_data <- fromJSON("https://api.datausa.io/api/?sort=desc&show=geo&required=income&sumlevel=tract&year=2016&where=geo%3A16000US2205000")$data
 tract_data[,2] <- substr(tract_data[,2],8,100)
 tract_data <- as_tibble(tract_data)
 colnames(tract_data)[(1:3)] <- c("year", "GEOID", "median_income")
 ```
 
+
+The tract map is joined with the tract data from the API. The median income is converted to a numeric value in order to satisfy
+the requirements of the dollar_format() function, which will be used later in the visulization step. 
 
 
 <!-- overwriting shape file with tract income data -->
@@ -70,7 +98,10 @@ br_tract_income_map$median_income <- as.numeric(br_tract_income_map$median_incom
 ```
 
 
-<!-- brMap <- get_map(location = 'baton rouge', zoom = 10) -->
+To determine which 311 reports fall within which tract, we use a built in function st_intersects() from the sf library. It
+compares the lattitude and longitude of the 311 reports and the geometries of the shape file for Baton Rouge. For each report
+the GEOID column is updated to the corresponding tract GEOID.
+
 
 <!-- find which point fall within each geometry -->
 ```{r}
@@ -79,12 +110,22 @@ st_crs(road_geom) <- 4269
 st_crs(br_tract_income_map)<-4269
 inside <- st_intersects(br_tract_income_map, road_geom)
 count = 1
+
 for (tract in inside) {
   geo_id <- br_tract_income_map[count,]$GEOID
   road_issues$GEOID[road_issues$index %in% tract] <- geo_id
   count <- count + 1
 }
+```
 
+
+A mean tract fix time for each tract is created by grouping the 311 reports on the newly updated GEOID column. The reports
+with NA values are dropped from this table. The total number of reports for each tract is also calculated in this step. 
+The resultant table is then joined with the Baton Rouge shape file data on GEOID to produce the final table, with the mean
+fix time reported in days. 
+
+
+```{r}
 mean_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
   summarise(mean_tract_fix_time = mean(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
 
@@ -93,12 +134,15 @@ br_tract_income_map <- inner_join(br_tract_income_map, mean_tract_fix_time, by="
 br_tract_income_map$mean_tract_fix_time <- day(seconds_to_period(br_tract_income_map$mean_tract_fix_time))
 ```
 
+
 <!-- median income vs mean tract fix time correlation -->
 ```{r}
-cor_coeff_mean_tract <- cor(br_tract_income_map$mean_tract_fix_time,br_tract_income_map$median_income, use="pairwise.complete.obs")
+cor_coeff_mean_tract <- cor(br_tract_income_map$mean_tract_fix_time,
+                            br_tract_income_map$median_income, use="pairwise.complete.obs")
 ```
 
-#median income plot
+####The Pearson correlation coefficient between the mean tract fix time and the median income is `r cor_coeff_mean_tract`
+
 ```{r}
 # median income plot
 ggplot() +
@@ -110,7 +154,7 @@ ggplot() +
   ggtitle("Median Income for Baton Rouge")
 ```
 
-#scatter plot for br_tract_income_map where x = mean_tract_fix_time and y=median income.
+
 ```{r}
 ggplot()+
   geom_point(data=br_tract_income_map, aes(x = mean_tract_fix_time, 
@@ -121,7 +165,7 @@ ggplot()+
   ggtitle("Mean Tract Fix Time vs Median Income")
 ```
 
-#Mean tract fix time by day
+
 ```{r}
 ggplot() +
   geom_sf(data=br_tract_income_map, aes(fill=as.numeric(mean_tract_fix_time))) +
@@ -132,7 +176,12 @@ ggplot() +
   ggtitle("Mean Tract Fix Time for Baton Rouge")
 ```
 
-# Median tract
+
+Similar to the process above, the median fix time is calculated for each tract with available data, along with the number of 
+reports for each tract. The median fix time table is joined on GEOID with br_tract_income_map to produce the final data table, 
+with the median fix time reported in days. 
+
+
 ```{r}
 median_tract_fix_time <- road_issues %>% group_by(GEOID) %>%
   summarise(median_tract_fix_time = median(time_to_complete, na.rm=TRUE), num_reports = n()) %>% drop_na()
@@ -143,13 +192,15 @@ br_tract_income_map$median_tract_fix_time <- day(seconds_to_period(br_tract_inco
 
 ```
 
-#median income vs median tract fix time correlation
+
 ```{r}
-cor_coeff_median_tract <- cor(br_tract_income_map$median_tract_fix_time,br_tract_income_map$median_income, use="pairwise.complete.obs")
+cor_coeff_median_tract <- cor(br_tract_income_map$median_tract_fix_time,
+                              br_tract_income_map$median_income,use="pairwise.complete.obs")
 ```
 
+####The Pearson correlation coefficient between the median tract fix time and the median income is `r cor_coeff_median_tract`
 
-# scatter plot for median income and median tract fix time
+
 ```{r}
 ggplot()+
   geom_point(data=br_tract_income_map, aes(x = median_tract_fix_time, 
@@ -161,7 +212,7 @@ ggplot()+
 ```
  
 
-# Mean tract fix time by day
+
 ```{r}
 ggplot() +
   geom_sf(data=br_tract_income_map, aes(fill=as.numeric(median_tract_fix_time))) +
@@ -172,4 +223,10 @@ ggplot() +
   ggtitle("Median Tract Fix Time")
 
 ```
+
+# Results and Issues
+
+
+*****Can your work on this?
+
 
