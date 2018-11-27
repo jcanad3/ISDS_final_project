@@ -214,7 +214,12 @@ ggplot() +
 
 ![](groupProject_files/figure-markdown_github/unnamed-chunk-15-1.png)
 
-Results and Issues
-==================
+Results
+=======
 
-\*\*\*\*\*Can your work on this?
+From the data we collected, we can conclude that the median income of a census tract does not affect the fix time of roads within that tract.
+
+Future Plans
+============
+
+Outlier Analysis
