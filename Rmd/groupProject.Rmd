@@ -41,7 +41,7 @@ dt_311 <- dt_311 %>%
 ```
 
 # Research Question
-Does the median income of an area affect the fix of road related issues in Baton Rouge?
+Does the median income of an area affect the fix time of road related issues in Baton Rouge?
 
 # Data Sources
 The final data table comes from three sources: the United States Census Bureau, Data USA, and OpenBR. 
